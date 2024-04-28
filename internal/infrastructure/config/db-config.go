@@ -9,7 +9,7 @@ type DBConfig struct {
 	DBPort     string `env:"DB_PORT" envDefault:"5432"`
 	DBPassword string `env:"POSTGRES_PASSWORD"`
 	DBName     string `env:"POSTGRES_DB"`
-	DBUser     string `env:"POSTGRES_USER" envDefault:"user"`
+	DBUser     string `env:"POSTGRES_USER" envDefault:"user-service"`
 }
 
 func NewDBConfig() *DBConfig {
