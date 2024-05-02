@@ -1,5 +1,8 @@
 app_env: #local | development | production
 db_path:
+secret_key:
+accessMaxAge:
+refreshMaxAge:
 http_server:
   address:
   timeout:

@@ -1,26 +1,35 @@
-package database
+package postgres
 
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"task-manager/internal/infrastructure/config"
+	"task-manager/internal/infrastructure/database/postgres/model"
 )
 
 var Db *gorm.DB
 
-func InitDB(cfg config.DBConfig) *gorm.DB {
+func InitDB(cfg *config.DBConfig) *gorm.DB {
 	Db = connectDB(cfg)
 	return Db
 }
 
-func connectDB(cfg config.DBConfig) *gorm.DB {
+func connectDB(cfg *config.DBConfig) *gorm.DB {
 	DSN := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", "localhost", cfg.DBUser, cfg.DBPassword, cfg.DBName)
-	db, err := gorm.Open(postgres.Open(DSN), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(DSN), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 
 	if err != nil {
 		log.Fatal("Connection error", err)
+	}
+
+	err = db.AutoMigrate(&model.User{})
+	if err != nil {
+		log.Fatal("Migration error", err)
 	}
 
 	return db

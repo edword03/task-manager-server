@@ -1,21 +1,22 @@
 package main
 
 import (
-	config2 "task-manager/internal/infrastructure/config"
-	"task-manager/internal/infrastructure/database"
-	"task-manager/internal/infrastructure/lib/logger"
+	"task-manager/internal/infrastructure/config"
+	"task-manager/internal/infrastructure/database/postgres"
+	"task-manager/internal/infrastructure/database/redis"
 	"task-manager/internal/infrastructure/server"
 )
 
 func main() {
-	appConfig := config2.NewAppConfig()
+	appConfig := config.NewAppConfig()
 	loadDB()
-	logger.SetupLogger(appConfig.Env)
 
 	server.New(appConfig)
 }
 
 func loadDB() {
-	dbConfig := config2.NewDBConfig()
-	database.InitDB(*dbConfig)
+	dbConfig := config.NewDBConfig()
+	postgres.InitDB(dbConfig)
+
+	redis.InitRedis(dbConfig)
 }

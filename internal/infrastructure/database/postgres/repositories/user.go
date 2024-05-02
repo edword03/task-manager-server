@@ -1,9 +1,12 @@
 package repositories
 
 import (
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"task-manager/internal/domain/entities"
 	"task-manager/internal/domain/repositories"
+	"task-manager/internal/infrastructure/database/postgres/mappers"
+	"task-manager/internal/infrastructure/database/postgres/model"
 )
 
 type UserRepository struct {
@@ -14,12 +17,13 @@ func NewUserRepo(db *gorm.DB) repositories.UserRepository {
 	return UserRepository{db: db}
 }
 
-func (u UserRepository) Create(user *entities.User) error {
-	if err := u.db.Create(user).Error; err != nil {
-		return err
+func (u UserRepository) Create(user *entities.User) (*entities.User, error) {
+	dbUser := mappers.ToDBUser(user)
+	if err := u.db.Create(dbUser).Error; err != nil {
+		return nil, err
 	}
 
-	return nil
+	return mappers.ToDomainUser(dbUser), nil
 }
 
 func (u UserRepository) FindById(id string) (*entities.User, error) {
@@ -38,8 +42,20 @@ func (u UserRepository) FindByUsername(username string) (*entities.User, error) 
 }
 
 func (u UserRepository) FindByEmail(email string) (*entities.User, error) {
-	//TODO implement me
-	panic("implement me")
+	var user *model.User
+
+	err := u.db.Where("email = ?", email).Find(&user).Error
+
+	if err != nil {
+		logrus.Error("user repo: ", err)
+		return nil, err
+	}
+
+	if user.Email == "" {
+		return nil, nil
+	}
+
+	return mappers.ToDomainUser(user), nil
 }
 
 func (u UserRepository) FindAll() ([]*entities.User, error) {

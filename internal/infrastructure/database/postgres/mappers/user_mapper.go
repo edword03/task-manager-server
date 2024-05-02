@@ -2,7 +2,7 @@ package mappers
 
 import (
 	"task-manager/internal/domain/entities"
-	"task-manager/internal/infrastructure/database/model"
+	"task-manager/internal/infrastructure/database/postgres/model"
 )
 
 func ToDBUser(user *entities.User) *model.User {

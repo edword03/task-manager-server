@@ -9,7 +9,7 @@ import (
 )
 
 type IAuthService interface {
-	Register(user *entities.User) error
+	Register(payload *dto.RegisterDTO) (*entities.User, error)
 	Login(payload dto.LoginDTO) (*entities.User, error)
 	Authenticate(id string) (*entities.User, error)
 }
@@ -18,18 +18,19 @@ type AuthService struct {
 	repository repositories.UserRepository
 }
 
-func NewAuthService(repository repositories.UserRepository) IAuthService {
+func NewAuthService(repository repositories.UserRepository) *AuthService {
 	return &AuthService{repository: repository}
 }
 
-func (a AuthService) Register(payload *entities.User) error {
+func (a AuthService) Register(payload *dto.RegisterDTO) (*entities.User, error) {
 	existUser, err := a.repository.FindByEmail(payload.Email)
+
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if existUser != nil {
-		return errors.New("user with this email already exists")
+		return nil, errors.New("user with this email already exists")
 	}
 
 	var avatar = "/mock-avatar.png"
@@ -48,7 +49,7 @@ func (a AuthService) Register(payload *entities.User) error {
 		lastName = payload.LastName
 	}
 
-	var newUser *entities.User = &entities.User{
+	var newUser = entities.User{
 		Email:     payload.Email,
 		Username:  payload.Username,
 		FirstName: firstName,
@@ -58,13 +59,13 @@ func (a AuthService) Register(payload *entities.User) error {
 		Avatar:    avatar,
 	}
 
-	err = a.repository.Create(newUser)
+	createdUser, err := a.repository.Create(&newUser)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return createdUser, nil
 }
 
 func (a AuthService) Login(payload dto.LoginDTO) (*entities.User, error) {
