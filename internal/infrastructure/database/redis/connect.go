@@ -1,7 +1,9 @@
 package redis
 
 import (
+	"context"
 	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 	"task-manager/internal/infrastructure/config"
 )
 
@@ -20,4 +22,15 @@ func InitRedis(cfg *config.DBConfig) {
 		Password: cfg.RedisPass,
 		DB:       1,
 	})
+
+	if TokensClient == nil {
+		logrus.Fatalf("init redis fail")
+	}
+
+	err := TokensClient.Ping(context.Background()).Err()
+	if err != nil {
+		logrus.Fatalf("init redis fail")
+	}
+
+	TokensClient.AddHook(loggerHook{})
 }

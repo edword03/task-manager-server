@@ -5,7 +5,7 @@ import (
 	"task-manager/internal/infrastructure/controllers/rest-api/auth/request"
 )
 
-func ToDomainDTO(body request.RegisterDTO) *dto.RegisterDTO {
+func ToDomainRegisterDTO(body request.RegisterDTO) *dto.RegisterDTO {
 	return &dto.RegisterDTO{
 		Email:     body.Email,
 		Username:  body.Username,
@@ -14,5 +14,12 @@ func ToDomainDTO(body request.RegisterDTO) *dto.RegisterDTO {
 		Password:  body.Password,
 		Sphere:    body.Sphere,
 		Avatar:    body.Avatar,
+	}
+}
+
+func ToDomainLoginDTO(body request.LoginDTO) *dto.LoginDTO {
+	return &dto.LoginDTO{
+		Email:    body.Email,
+		Password: body.Password,
 	}
 }

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"task-manager/internal/domain/entities"
 	"task-manager/internal/domain/repositories"
@@ -27,13 +28,22 @@ func (u UserRepository) Create(user *entities.User) (*entities.User, error) {
 }
 
 func (u UserRepository) FindById(id string) (*entities.User, error) {
-	//TODO implement me
-	panic("implement me")
+	var user *model.User
+	err := u.db.Where("id = ?", id).Find(&user).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return mappers.ToDomainUser(user), nil
 }
 
-func (u UserRepository) ComparePassword(password, passwordDto string) (bool, error) {
-	//TODO implement me
-	panic("implement me")
+func (u UserRepository) ComparePassword(hashedPassword, password string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (u UserRepository) FindByUsername(username string) (*entities.User, error) {
@@ -58,9 +68,15 @@ func (u UserRepository) FindByEmail(email string) (*entities.User, error) {
 	return mappers.ToDomainUser(user), nil
 }
 
-func (u UserRepository) FindAll() ([]*entities.User, error) {
-	//TODO implement me
-	panic("implement me")
+func (u UserRepository) FindAll(query string) ([]*entities.User, error) {
+	var users []*model.User
+	err := u.db.Where("first_name = ", query).Find(&users).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return mappers.ToDomainUsers(users), nil
 }
 
 func (u UserRepository) Update(user *entities.User) error {

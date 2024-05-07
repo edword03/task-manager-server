@@ -10,7 +10,7 @@ import (
 
 type IAuthService interface {
 	Register(payload *dto.RegisterDTO) (*entities.User, error)
-	Login(payload dto.LoginDTO) (*entities.User, error)
+	Login(payload *dto.LoginDTO) (*entities.User, error)
 	Authenticate(id string) (*entities.User, error)
 }
 
@@ -68,24 +68,19 @@ func (a AuthService) Register(payload *dto.RegisterDTO) (*entities.User, error) 
 	return createdUser, nil
 }
 
-func (a AuthService) Login(payload dto.LoginDTO) (*entities.User, error) {
+func (a AuthService) Login(payload *dto.LoginDTO) (*entities.User, error) {
 	existUser, err := a.repository.FindByEmail(payload.Email)
 	if err != nil {
 		return nil, err
 	}
 
 	if existUser == nil {
-		return nil, errors.New("user not exist")
+		return nil, errors.New("user not found")
 	}
 
-	isCorrectPass, passErr := a.repository.ComparePassword(existUser.Password, payload.Password)
-
-	if passErr != nil {
-		return nil, passErr
-	}
-
-	if !isCorrectPass {
-		return nil, errors.New("incorrect password")
+	_, err = a.repository.ComparePassword(existUser.Password, payload.Password)
+	if err != nil {
+		return nil, errors.New("invalid password")
 	}
 
 	return existUser, nil

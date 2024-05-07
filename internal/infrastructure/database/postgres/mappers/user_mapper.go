@@ -30,3 +30,12 @@ func ToDomainUser(user *model.User) *entities.User {
 		Avatar:    user.Avatar,
 	}
 }
+
+func ToDomainUsers(users []*model.User) []*entities.User {
+	var result []*entities.User
+	for _, user := range users {
+		result = append(result, ToDomainUser(user))
+	}
+
+	return result
+}

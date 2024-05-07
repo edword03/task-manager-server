@@ -9,3 +9,8 @@ type RegisterDTO struct {
 	Sphere    string `validate:"required"`
 	Avatar    string
 }
+
+type LoginDTO struct {
+	Email    string `validate:"required,email"`
+	Password string `validate:"required,min=8"`
+}
