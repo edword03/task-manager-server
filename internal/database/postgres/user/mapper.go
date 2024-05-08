@@ -1,12 +1,11 @@
-package mappers
+package user
 
 import (
 	"task-manager/internal/domain/entities"
-	"task-manager/internal/infrastructure/database/postgres/model"
 )
 
-func ToDBUser(user *entities.User) *model.User {
-	return &model.User{
+func ToDBUser(user *entities.User) *User {
+	return &User{
 		Email:     user.Email,
 		Username:  user.Username,
 		FirstName: user.FirstName,
@@ -18,7 +17,7 @@ func ToDBUser(user *entities.User) *model.User {
 
 }
 
-func ToDomainUser(user *model.User) *entities.User {
+func ToDomainUser(user *User) *entities.User {
 	return &entities.User{
 		ID:        user.ID,
 		Email:     user.Email,
@@ -31,7 +30,7 @@ func ToDomainUser(user *model.User) *entities.User {
 	}
 }
 
-func ToDomainUsers(users []*model.User) []*entities.User {
+func ToDomainUsers(users []*User) []*entities.User {
 	var result []*entities.User
 	for _, user := range users {
 		result = append(result, ToDomainUser(user))

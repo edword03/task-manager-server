@@ -7,29 +7,29 @@ import (
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
-	"task-manager/internal/domain/services/auth_service"
-	"task-manager/internal/infrastructure/config"
-	"task-manager/internal/infrastructure/controllers/rest-api/auth/request"
-	"task-manager/internal/infrastructure/controllers/rest-api/auth/request/mapper"
-	"task-manager/internal/infrastructure/controllers/rest-api/auth/response"
+	"task-manager/internal/config"
+	"task-manager/internal/controllers/http/DTO"
+	"task-manager/internal/controllers/http/middleware"
+	"task-manager/internal/controllers/http/response"
+	"task-manager/internal/domain/entities"
+	"task-manager/internal/domain/services/dto"
 	"time"
 )
 
-type IAuthController interface {
-	Register(ctx *gin.Context)
-	Login(ctx *gin.Context)
-	Authenticate(ctx *gin.Context)
-	Logout(ctx *gin.Context)
+type authService interface {
+	Register(payload *dto.RegisterDTO) (*entities.User, error)
+	Login(payload *dto.LoginDTO) (*entities.User, error)
+	Authenticate(id string) (*entities.User, error)
 }
 
 type Controller struct {
-	authService  auth_service.IAuthService
+	authService  authService
 	tokenService IJWTService
 	log          *logrus.Logger
 	cfg          *config.AppConfig
 }
 
-func NewAuthController(gin *gin.Engine, authService auth_service.IAuthService,
+func NewAuthController(gin *gin.Engine, authService authService,
 	tokenService IJWTService, cfg *config.AppConfig) *Controller {
 	controller := &Controller{
 		authService:  authService,
@@ -42,7 +42,7 @@ func NewAuthController(gin *gin.Engine, authService auth_service.IAuthService,
 		r.POST("/register", controller.Register)
 		r.POST("/login", controller.Login)
 		r.POST("/authenticate", controller.Authenticate)
-		r.POST("/logout", CheckTokenMiddleware(tokenService), controller.Logout)
+		r.POST("/logout", middleware.CheckTokenMiddleware(tokenService), controller.Logout)
 	}
 
 	return controller
@@ -50,7 +50,7 @@ func NewAuthController(gin *gin.Engine, authService auth_service.IAuthService,
 
 func (a Controller) Register(ctx *gin.Context) {
 	validate := validator.New()
-	var registerUser request.RegisterDTO
+	var registerUser DTO.RegisterDTO
 
 	err := ctx.ShouldBindJSON(&registerUser)
 	if err != nil {
@@ -79,7 +79,7 @@ func (a Controller) Register(ctx *gin.Context) {
 		return
 	}
 
-	newUser, regErr := a.authService.Register(mapper.ToDomainRegisterDTO(registerUser))
+	newUser, regErr := a.authService.Register(DTO.ToDomainRegisterDTO(registerUser))
 
 	if regErr != nil {
 		logrus.Warnf("register service error: %v", regErr)
@@ -112,7 +112,7 @@ func (a Controller) Register(ctx *gin.Context) {
 
 func (a Controller) Login(ctx *gin.Context) {
 	validate := validator.New()
-	var loginUser request.LoginDTO
+	var loginUser DTO.LoginDTO
 	err := ctx.ShouldBindJSON(&loginUser)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -137,7 +137,7 @@ func (a Controller) Login(ctx *gin.Context) {
 		return
 	}
 
-	user, err := a.authService.Login(mapper.ToDomainLoginDTO(loginUser))
+	user, err := a.authService.Login(DTO.ToDomainLoginDTO(loginUser))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

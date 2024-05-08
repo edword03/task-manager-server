@@ -1,4 +1,4 @@
-package auth
+package middleware
 
 import (
 	"fmt"
@@ -6,9 +6,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
+	"task-manager/internal/controllers/http/auth"
 )
 
-func CheckTokenMiddleware(tokenService IJWTService) gin.HandlerFunc {
+func CheckTokenMiddleware(tokenService auth.IJWTService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		splitToken := strings.Split(c.Request.Header.Get("Authorization"), "Bearer ")
 

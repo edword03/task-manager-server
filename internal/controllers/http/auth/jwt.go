@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"task-manager/internal/config"
+	"task-manager/internal/database/redis/repositories"
 	"task-manager/internal/domain/entities"
-	"task-manager/internal/infrastructure/config"
-	"task-manager/internal/infrastructure/database/redis/repositories"
 	"time"
 )
 

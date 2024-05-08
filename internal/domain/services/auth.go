@@ -1,29 +1,22 @@
-package auth_service
+package services
 
 import (
 	"errors"
 	"task-manager/internal/domain/entities"
-	"task-manager/internal/domain/repositories"
 	"task-manager/internal/domain/services/dto"
 	_ "task-manager/internal/domain/services/dto"
 )
 
-type IAuthService interface {
-	Register(payload *dto.RegisterDTO) (*entities.User, error)
-	Login(payload *dto.LoginDTO) (*entities.User, error)
-	Authenticate(id string) (*entities.User, error)
-}
-
 type AuthService struct {
-	repository repositories.UserRepository
+	userRepo userRepository
 }
 
-func NewAuthService(repository repositories.UserRepository) *AuthService {
-	return &AuthService{repository: repository}
+func NewAuthService(repository userRepository) *AuthService {
+	return &AuthService{userRepo: repository}
 }
 
 func (a AuthService) Register(payload *dto.RegisterDTO) (*entities.User, error) {
-	existUser, err := a.repository.FindByEmail(payload.Email)
+	existUser, err := a.userRepo.FindByEmail(payload.Email)
 
 	if err != nil {
 		return nil, err
@@ -59,7 +52,7 @@ func (a AuthService) Register(payload *dto.RegisterDTO) (*entities.User, error) 
 		Avatar:    avatar,
 	}
 
-	createdUser, err := a.repository.Create(&newUser)
+	createdUser, err := a.userRepo.Create(&newUser)
 
 	if err != nil {
 		return nil, err
@@ -69,7 +62,7 @@ func (a AuthService) Register(payload *dto.RegisterDTO) (*entities.User, error) 
 }
 
 func (a AuthService) Login(payload *dto.LoginDTO) (*entities.User, error) {
-	existUser, err := a.repository.FindByEmail(payload.Email)
+	existUser, err := a.userRepo.FindByEmail(payload.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +71,7 @@ func (a AuthService) Login(payload *dto.LoginDTO) (*entities.User, error) {
 		return nil, errors.New("user not found")
 	}
 
-	_, err = a.repository.ComparePassword(existUser.Password, payload.Password)
+	_, err = a.userRepo.ComparePassword(existUser.Password, payload.Password)
 	if err != nil {
 		return nil, errors.New("invalid password")
 	}
@@ -87,7 +80,7 @@ func (a AuthService) Login(payload *dto.LoginDTO) (*entities.User, error) {
 }
 
 func (a AuthService) Authenticate(id string) (*entities.User, error) {
-	user, err := a.repository.FindById(id)
+	user, err := a.userRepo.FindById(id)
 	if err != nil {
 		return nil, err
 	}

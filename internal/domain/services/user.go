@@ -1,17 +1,8 @@
-package user_service
+package services
 
 import (
 	"task-manager/internal/domain/entities"
-	"task-manager/internal/infrastructure/database/postgres/repositories"
 )
-
-type IUserService interface {
-	GetUsers(queries *Queries) ([]entities.User, error)
-	GetUserById(id string) (entities.User, error)
-	CreateUser(user *entities.User) (id string, err error)
-	UpdateUser(user *entities.User) (entity entities.User, err error)
-	DeleteUser(id string) error
-}
 
 type Queries struct {
 	Page   string
@@ -19,12 +10,12 @@ type Queries struct {
 }
 
 type UserService struct {
-	repository repositories.UserRepository
+	userRepo userRepository
 }
 
-func NewUserService(repository repositories.UserRepository) *UserService {
+func NewUserService(repository userRepository) *UserService {
 	return &UserService{
-		repository: repository,
+		userRepo: repository,
 	}
 }
 

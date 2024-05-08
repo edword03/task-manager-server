@@ -1,10 +1,8 @@
-package repositories
+package services
 
-import (
-	"task-manager/internal/domain/entities"
-)
+import "task-manager/internal/domain/entities"
 
-type UserRepository interface {
+type userRepository interface {
 	Create(user *entities.User) (*entities.User, error)
 	FindById(id string) (*entities.User, error)
 	FindByUsername(username string) (*entities.User, error)

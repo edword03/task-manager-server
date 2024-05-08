@@ -1,41 +1,38 @@
-package repositories
+package user
 
 import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"task-manager/internal/domain/entities"
-	"task-manager/internal/domain/repositories"
-	"task-manager/internal/infrastructure/database/postgres/mappers"
-	"task-manager/internal/infrastructure/database/postgres/model"
 )
 
 type UserRepository struct {
 	db *gorm.DB
 }
 
-func NewUserRepo(db *gorm.DB) repositories.UserRepository {
+func NewUserRepo(db *gorm.DB) UserRepository {
 	return UserRepository{db: db}
 }
 
 func (u UserRepository) Create(user *entities.User) (*entities.User, error) {
-	dbUser := mappers.ToDBUser(user)
+	dbUser := ToDBUser(user)
 	if err := u.db.Create(dbUser).Error; err != nil {
 		return nil, err
 	}
 
-	return mappers.ToDomainUser(dbUser), nil
+	return ToDomainUser(dbUser), nil
 }
 
 func (u UserRepository) FindById(id string) (*entities.User, error) {
-	var user *model.User
+	var user *User
 	err := u.db.Where("id = ?", id).Find(&user).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	return mappers.ToDomainUser(user), nil
+	return ToDomainUser(user), nil
 }
 
 func (u UserRepository) ComparePassword(hashedPassword, password string) (bool, error) {
@@ -52,7 +49,7 @@ func (u UserRepository) FindByUsername(username string) (*entities.User, error) 
 }
 
 func (u UserRepository) FindByEmail(email string) (*entities.User, error) {
-	var user *model.User
+	var user *User
 
 	err := u.db.Where("email = ?", email).Find(&user).Error
 
@@ -65,18 +62,18 @@ func (u UserRepository) FindByEmail(email string) (*entities.User, error) {
 		return nil, nil
 	}
 
-	return mappers.ToDomainUser(user), nil
+	return ToDomainUser(user), nil
 }
 
 func (u UserRepository) FindAll(query string) ([]*entities.User, error) {
-	var users []*model.User
+	var users []*User
 	err := u.db.Where("first_name = ", query).Find(&users).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	return mappers.ToDomainUsers(users), nil
+	return ToDomainUsers(users), nil
 }
 
 func (u UserRepository) Update(user *entities.User) error {
