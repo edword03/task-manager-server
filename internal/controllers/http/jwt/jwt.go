@@ -1,4 +1,4 @@
-package auth
+package jwt
 
 import (
 	"errors"
@@ -6,28 +6,27 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"task-manager/internal/config"
-	"task-manager/internal/database/redis/repositories"
 	"task-manager/internal/domain/entities"
 	"time"
 )
 
-type IJWTService interface {
-	GenerateAccessToken(user *entities.User) (string, error)
-	ParseAccessToken(tokenString string) (*jwt.Token, error)
-	GenerateRefreshToken(id string) (string, error)
-	CheckRefreshToken(refreshTokenString string) (string, error)
-	DeleteRefreshToken(refreshTokenString string) error
+type tokenRepository interface {
+	Get(string) (string, error)
+	Set(key string, value string, expiration time.Duration) error
+	Delete(string) error
 }
 
 type JWTService struct {
 	cfg       *config.AppConfig
-	tokenRepo repositories.ITokenRepository
+	tokenRepo tokenRepository
+	maxAge    time.Duration
 }
 
-func NewJWTService(cfg *config.AppConfig, tokenRepo repositories.ITokenRepository) *JWTService {
+func NewJWTService(cfg *config.AppConfig, tokenRepo tokenRepository, maxAge time.Duration) *JWTService {
 	return &JWTService{
 		cfg:       cfg,
 		tokenRepo: tokenRepo,
+		maxAge:    maxAge,
 	}
 }
 
@@ -44,7 +43,7 @@ func (s *JWTService) GenerateAccessToken(user *entities.User) (string, error) {
 	return accessToken.SignedString([]byte(s.cfg.SecretKey))
 }
 
-func (s *JWTService) ParseAccessToken(token string) (*jwt.Token, error) {
+func (s *JWTService) ParseAccessToken(token string) (jwt.MapClaims, error) {
 	var claims jwt.MapClaims
 	parsedToken, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.cfg.SecretKey), nil
@@ -58,13 +57,13 @@ func (s *JWTService) ParseAccessToken(token string) (*jwt.Token, error) {
 		return nil, errors.New(fmt.Sprintf("invalid token: %s", jwt.ErrTokenNotValidYet))
 	}
 
-	return parsedToken, nil
+	return claims, nil
 }
 
 func (s *JWTService) GenerateRefreshToken(id string) (string, error) {
 	refreshToken := uuid.New().String()
 
-	err := s.tokenRepo.Set(refreshToken, id, maxAgeCookie*time.Duration(s.cfg.RefreshMaxAge))
+	err := s.tokenRepo.Set(refreshToken, id, s.maxAge)
 	if err != nil {
 		return "", err
 	}

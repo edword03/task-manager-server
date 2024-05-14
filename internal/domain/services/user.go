@@ -19,9 +19,10 @@ func NewUserService(repository userRepository) *UserService {
 	}
 }
 
-//func (u UserService) GetUsers(queries Queries) ([]entities.User, error) {
-//	user, err := u.repository.FindAll(query)
-//}
+func (u UserService) GetUsers(queries *Queries) ([]entities.User, error) {
+	//TODO implement me
+	panic("implement me")
+}
 
 func (u UserService) GetUserById(id string) (entities.User, error) {
 	//TODO implement me

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 	"task-manager/internal/config"
 	"task-manager/internal/controllers/http/DTO"
-	"task-manager/internal/controllers/http/middleware"
 	"task-manager/internal/controllers/http/response"
 	"task-manager/internal/domain/entities"
 	"task-manager/internal/domain/services/dto"
@@ -22,27 +22,35 @@ type authService interface {
 	Authenticate(id string) (*entities.User, error)
 }
 
+type jwtService interface {
+	GenerateAccessToken(user *entities.User) (string, error)
+	ParseAccessToken(tokenString string) (jwt.MapClaims, error)
+	GenerateRefreshToken(id string) (string, error)
+	CheckRefreshToken(refreshTokenString string) (string, error)
+	DeleteRefreshToken(refreshTokenString string) error
+}
+
 type Controller struct {
 	authService  authService
-	tokenService IJWTService
+	tokenService jwtService
 	log          *logrus.Logger
 	cfg          *config.AppConfig
 }
 
 func NewAuthController(gin *gin.Engine, authService authService,
-	tokenService IJWTService, cfg *config.AppConfig) *Controller {
+	tokenService jwtService, cfg *config.AppConfig) *Controller {
 	controller := &Controller{
 		authService:  authService,
 		cfg:          cfg,
 		tokenService: tokenService,
 	}
 
-	r := gin.Group("auth")
+	gin.Group("auth")
 	{
-		r.POST("/register", controller.Register)
-		r.POST("/login", controller.Login)
-		r.POST("/authenticate", controller.Authenticate)
-		r.POST("/logout", middleware.CheckTokenMiddleware(tokenService), controller.Logout)
+		gin.POST("/register", controller.Register)
+		gin.POST("/login", controller.Login)
+		gin.POST("/authenticate", controller.Authenticate)
+		gin.POST("/logout", CheckTokenMiddleware(tokenService), controller.Logout)
 	}
 
 	return controller
@@ -105,7 +113,7 @@ func (a Controller) Register(ctx *gin.Context) {
 		return
 	}
 
-	ctx.SetCookie("t", refreshToken, int(maxAgeCookie*time.Duration(a.cfg.RefreshMaxAge)), "/", "", false, true)
+	ctx.SetCookie("t", refreshToken, int(MaxAgeCookie*time.Duration(a.cfg.RefreshMaxAge)), "/", "", false, true)
 
 	ctx.JSON(http.StatusCreated, gin.H{"id": newUser.ID, "token": accessToken})
 }
@@ -155,7 +163,7 @@ func (a Controller) Login(ctx *gin.Context) {
 		return
 	}
 
-	ctx.SetCookie("t", refreshToken, int(maxAgeCookie*time.Duration(a.cfg.RefreshMaxAge)), "/", "", false, true)
+	ctx.SetCookie("t", refreshToken, int(MaxAgeCookie*time.Duration(a.cfg.RefreshMaxAge)), "/", "", false, true)
 
 	ctx.JSON(http.StatusOK, gin.H{"user": response.ToUserResp(user), "token": accessToken})
 }
@@ -216,7 +224,7 @@ func (a Controller) Authenticate(ctx *gin.Context) {
 		return
 	}
 
-	ctx.SetCookie("t", refreshToken, int(maxAgeCookie*time.Duration(a.cfg.RefreshMaxAge)), "/", "", false, true)
+	ctx.SetCookie("t", refreshToken, int(MaxAgeCookie*time.Duration(a.cfg.RefreshMaxAge)), "/", "", false, true)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"token": accessToken,

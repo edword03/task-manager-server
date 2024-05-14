@@ -3,5 +3,5 @@ package auth
 import "time"
 
 const (
-	maxAgeCookie = time.Hour * 24
+	MaxAgeCookie = time.Hour * 24
 )

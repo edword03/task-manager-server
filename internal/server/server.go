@@ -6,12 +6,15 @@ import (
 	log "github.com/sirupsen/logrus"
 	"task-manager/internal/config"
 	"task-manager/internal/controllers/http/auth"
+	"task-manager/internal/controllers/http/jwt"
+	"task-manager/internal/controllers/http/users"
 	"task-manager/internal/database/postgres"
 	userRepo "task-manager/internal/database/postgres/user"
 	"task-manager/internal/database/redis"
-	redisRepo "task-manager/internal/database/redis/repositories"
+	redisRepository "task-manager/internal/database/redis/repositories"
 	"task-manager/internal/domain/services"
 	"task-manager/internal/pkg/logger"
+	"time"
 )
 
 func New(cfg *config.AppConfig) {
@@ -25,11 +28,13 @@ func New(cfg *config.AppConfig) {
 
 	userRepository := userRepo.NewUserRepo(postgres.Db)
 	authService := services.NewAuthService(userRepository)
+	userService := services.NewUserService(userRepository)
 
-	tokenRepo := redisRepo.NewTokenRepo(redis.TokensClient)
-	tokenService := auth.NewJWTService(cfg, tokenRepo)
+	tokenRepo := redisRepository.NewRedisRepo(redis.TokensClient)
+	tokenService := jwt.NewJWTService(cfg, tokenRepo, auth.MaxAgeCookie*time.Duration(cfg.RefreshMaxAge))
 
 	auth.NewAuthController(r, authService, tokenService, cfg)
+	users.NewUsersController(r, userService, tokenService)
 
 	log.Info("Server starting...")
 
