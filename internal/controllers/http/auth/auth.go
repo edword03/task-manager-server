@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
@@ -13,6 +12,7 @@ import (
 	"task-manager/internal/controllers/http/response"
 	"task-manager/internal/domain/entities"
 	"task-manager/internal/domain/services/dto"
+	"task-manager/internal/pkg"
 	"time"
 )
 
@@ -37,7 +37,7 @@ type Controller struct {
 	cfg          *config.AppConfig
 }
 
-func NewAuthController(gin *gin.Engine, authService authService,
+func NewAuthController(gin *gin.RouterGroup, authService authService,
 	tokenService jwtService, cfg *config.AppConfig) *Controller {
 	controller := &Controller{
 		authService:  authService,
@@ -60,8 +60,7 @@ func (a Controller) Register(ctx *gin.Context) {
 	validate := validator.New()
 	var registerUser DTO.RegisterDTO
 
-	err := ctx.ShouldBindJSON(&registerUser)
-	if err != nil {
+	if err := ctx.ShouldBindJSON(&registerUser); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		logrus.Warnf("register request body error: %v, %v", err, registerUser)
@@ -70,20 +69,11 @@ func (a Controller) Register(ctx *gin.Context) {
 	}
 
 	if validErr := validate.Struct(&registerUser); validErr != nil {
-		var errMessage []string
-		errors := validErr.(validator.ValidationErrors)
+		errorMessage := pkg.ExtractValidationErrors(validErr)
 
-		for _, err := range errors {
-			if err.ActualTag() == "required" {
-				errMessage = append(errMessage, fmt.Sprintf("field %v is required", err.Field()))
-			} else {
-				errMessage = append(errMessage, fmt.Sprintf("field %v is not valid", err.Field()))
-			}
-		}
+		logrus.Warnf("register request body error: %v, %v", strings.Join(errorMessage, ", "), registerUser)
 
-		logrus.Warnf("register request body error: %v, %v", strings.Join(errMessage, ", "), registerUser)
-
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": errMessage})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": errorMessage})
 		return
 	}
 
@@ -121,8 +111,8 @@ func (a Controller) Register(ctx *gin.Context) {
 func (a Controller) Login(ctx *gin.Context) {
 	validate := validator.New()
 	var loginUser DTO.LoginDTO
-	err := ctx.ShouldBindJSON(&loginUser)
-	if err != nil {
+
+	if err := ctx.ShouldBindJSON(&loginUser); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		logrus.Warnf("login request body error: %v, %v", err, loginUser)
 
@@ -130,18 +120,10 @@ func (a Controller) Login(ctx *gin.Context) {
 	}
 
 	if validErr := validate.Struct(&loginUser); validErr != nil {
-		var errMessage []string
-		errors := validErr.(validator.ValidationErrors)
-		for _, err := range errors {
-			if err.ActualTag() == "required" {
-				errMessage = append(errMessage, fmt.Sprintf("field %v is required", err.Field()))
-			} else {
-				errMessage = append(errMessage, fmt.Sprintf("field %v is not valid", err.Field()))
-			}
-		}
+		errorMessage := pkg.ExtractValidationErrors(validErr)
 
-		logrus.Warnf("login request body error: %v, %v", strings.Join(errMessage, ", "), loginUser)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": errMessage})
+		logrus.Warnf("login request body error: %v, %v", strings.Join(errorMessage, ", "), loginUser)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": errorMessage})
 		return
 	}
 

@@ -1,6 +1,7 @@
 package user
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -17,7 +18,7 @@ func NewUserRepo(db *gorm.DB) UserRepository {
 
 func (u UserRepository) Create(user *entities.User) (*entities.User, error) {
 	dbUser := ToDBUser(user)
-	if err := u.db.Create(dbUser).Error; err != nil {
+	if err := u.db.Model(&User{}).Create(dbUser).Error; err != nil {
 		return nil, err
 	}
 
@@ -26,7 +27,7 @@ func (u UserRepository) Create(user *entities.User) (*entities.User, error) {
 
 func (u UserRepository) FindById(id string) (*entities.User, error) {
 	var user *User
-	err := u.db.Where("id = ?", id).Find(&user).Error
+	err := u.db.Model(&User{}).Where("id = ?", id).Find(&user).Error
 
 	if err != nil {
 		return nil, err
@@ -44,22 +45,24 @@ func (u UserRepository) ComparePassword(hashedPassword, password string) (bool, 
 }
 
 func (u UserRepository) FindByUsername(username string) (*entities.User, error) {
-	//TODO implement me
-	panic("implement me")
+	var user *User
+	result := u.db.Model(User{}).Where("name = ?", username).Find(&user)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return ToDomainUser(user), nil
 }
 
 func (u UserRepository) FindByEmail(email string) (*entities.User, error) {
 	var user *User
 
-	err := u.db.Where("email = ?", email).Find(&user).Error
+	err := u.db.Model(&User{}).Where("email = ?", email).Find(&user).Error
 
 	if err != nil {
 		logrus.Error("user repo: ", err)
 		return nil, err
-	}
-
-	if user.Email == "" {
-		return nil, nil
 	}
 
 	return ToDomainUser(user), nil
@@ -77,11 +80,22 @@ func (u UserRepository) FindAll(query string) ([]*entities.User, error) {
 }
 
 func (u UserRepository) Update(user *entities.User) error {
-	//TODO implement me
-	panic("implement me")
+	result := u.db.Model(&User{}).Where("id = ?", user.ID).Updates(user)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	fmt.Println(result)
+
+	return nil
 }
 
 func (u UserRepository) Delete(id string) error {
-	//TODO implement me
-	panic("implement me")
+	result := u.db.Model(&User{}).Where("id = ?", id).Delete(&User{})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
 }

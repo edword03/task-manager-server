@@ -18,13 +18,15 @@ import (
 )
 
 func New(cfg *config.AppConfig) {
-	r := gin.Default()
+	g := gin.Default()
 
 	logger.SetupLogger(cfg.Env)
 
-	r.Use(gin.Logger())
-	r.Use(cors.Default())
-	r.Use(gin.Recovery())
+	g.Use(gin.Logger())
+	g.Use(cors.Default())
+	g.Use(gin.Recovery())
+
+	r := g.Group("/api/v1")
 
 	userRepository := userRepo.NewUserRepo(postgres.Db)
 	authService := services.NewAuthService(userRepository)
@@ -38,7 +40,7 @@ func New(cfg *config.AppConfig) {
 
 	log.Info("Server starting...")
 
-	if err := r.Run(cfg.HTTPServer.Address); err != nil {
+	if err := g.Run(cfg.HTTPServer.Address); err != nil {
 		log.Fatal(err)
 	}
 }
