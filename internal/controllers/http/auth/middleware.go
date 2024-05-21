@@ -13,6 +13,7 @@ func CheckTokenMiddleware(tokenService jwtService) gin.HandlerFunc {
 		splitToken := strings.Split(c.Request.Header.Get("Authorization"), "Bearer ")
 
 		if len(splitToken) != 2 {
+			logrus.Error("CheckTokenMiddleware | token is wrong or not provider or wrong of format bearer token")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Authorization required"})
 			return
 		}
@@ -21,7 +22,7 @@ func CheckTokenMiddleware(tokenService jwtService) gin.HandlerFunc {
 
 		claims, err := tokenService.ParseAccessToken(token)
 		if err != nil {
-			logrus.Error("auth middleware :", err)
+			logrus.Error("CheckTokenMiddleware :", err)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Invalid token or token is expired"})
 			return
 		}

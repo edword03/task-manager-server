@@ -1,6 +1,9 @@
 package services
 
-import "task-manager/internal/domain/entities"
+import (
+	"task-manager/internal/domain/entities"
+	"task-manager/internal/domain/services/dto"
+)
 
 type userRepository interface {
 	Create(user *entities.User) (*entities.User, error)
@@ -9,6 +12,6 @@ type userRepository interface {
 	FindByEmail(email string) (*entities.User, error)
 	ComparePassword(password, passwordDto string) (bool, error)
 	FindAll(query string) ([]*entities.User, error)
-	Update(user *entities.User) error
+	Update(userId string, user *dto.UserDTO) error
 	Delete(id string) error
 }

@@ -6,6 +6,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"task-manager/internal/domain/entities"
+	"task-manager/internal/domain/services/dto"
 )
 
 type UserRepository struct {
@@ -79,8 +80,8 @@ func (u UserRepository) FindAll(query string) ([]*entities.User, error) {
 	return ToDomainUsers(users), nil
 }
 
-func (u UserRepository) Update(user *entities.User) error {
-	result := u.db.Model(&User{}).Where("id = ?", user.ID).Updates(user)
+func (u UserRepository) Update(userId string, user *dto.UserDTO) error {
+	result := u.db.Model(&User{}).Where("id = ?", userId).Updates(user)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -91,7 +92,7 @@ func (u UserRepository) Update(user *entities.User) error {
 }
 
 func (u UserRepository) Delete(id string) error {
-	result := u.db.Model(&User{}).Where("id = ?", id).Delete(&User{})
+	result := u.db.Model(&User{}).Delete(&User{}, id)
 
 	if result.Error != nil {
 		return result.Error

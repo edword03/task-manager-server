@@ -22,7 +22,7 @@ func (a AuthService) Register(payload *dto.RegisterDTO) (*entities.User, error) 
 		return nil, err
 	}
 
-	if existUser != nil {
+	if existUser != nil && existUser.ID != "" {
 		return nil, errors.New("user with this email already exists")
 	}
 

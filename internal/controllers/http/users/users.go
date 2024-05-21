@@ -7,8 +7,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"strings"
+	"task-manager/internal/controllers/http/DTO"
+	"task-manager/internal/controllers/http/auth"
+	"task-manager/internal/controllers/http/response"
 	"task-manager/internal/domain/entities"
 	"task-manager/internal/domain/services"
+	"task-manager/internal/domain/services/dto"
 	"task-manager/internal/pkg"
 )
 
@@ -16,8 +21,8 @@ type userService interface {
 	GetUsers(queries *services.Queries) ([]entities.User, error)
 	GetUserById(id string) (*entities.User, error)
 	GetUserByEmail(email string) (*entities.User, error)
-	CreateUser(user *entities.User) (id string, err error)
-	UpdateUser(user *entities.User) error
+	CreateUser(payload *dto.RegisterDTO) (*entities.User, error)
+	UpdateUser(userId string, user *dto.UserDTO) error
 	DeleteUser(id string) error
 }
 
@@ -29,18 +34,18 @@ type tokenService interface {
 	DeleteRefreshToken(refreshTokenString string) error
 }
 
-type UsersController struct {
+type Controller struct {
 	userService  userService
 	tokenService tokenService
 }
 
-func NewUsersController(gin *gin.RouterGroup, userService userService, tokenService tokenService) *UsersController {
-	controller := &UsersController{
+func NewUsersController(gin *gin.RouterGroup, userService userService, tokenService tokenService) *Controller {
+	controller := &Controller{
 		userService:  userService,
 		tokenService: tokenService,
 	}
 
-	r := gin.Group("/users")
+	r := gin.Group("/users", auth.CheckTokenMiddleware(tokenService))
 	{
 		r.GET("", controller.GetUsers)
 		r.GET("/:id", controller.GetUserById)
@@ -53,7 +58,7 @@ func NewUsersController(gin *gin.RouterGroup, userService userService, tokenServ
 	return controller
 }
 
-func (u UsersController) GetUsers(ctx *gin.Context) {
+func (u Controller) GetUsers(ctx *gin.Context) {
 	search := ctx.Request.URL.Query().Get("search")
 	page := ctx.Request.URL.Query().Get("page")
 
@@ -72,21 +77,23 @@ func (u UsersController) GetUsers(ctx *gin.Context) {
 
 }
 
-func (u UsersController) GetUserById(ctx *gin.Context) {
+func (u Controller) GetUserById(ctx *gin.Context) {
 	userId := ctx.Param("id")
 	user, err := u.userService.GetUserById(userId)
 
 	if err != nil {
 		logrus.Error("GET /users/:id: | user service error", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, "Something went wrong")
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user)
+	ctx.JSON(http.StatusOK, response.ToUserResp(user))
 }
 
-func (u UsersController) GetMe(ctx *gin.Context) {
+func (u Controller) GetMe(ctx *gin.Context) {
 	token := ctx.Request.Header.Get("Authorization")
+
+	splitToken := strings.Split(token, "Bearer ")
 
 	if token == "" {
 		logrus.Error("GET /users/me: | token is not provided")
@@ -94,7 +101,7 @@ func (u UsersController) GetMe(ctx *gin.Context) {
 		return
 	}
 
-	claims, err := u.tokenService.ParseAccessToken(token)
+	claims, err := u.tokenService.ParseAccessToken(splitToken[1])
 	if err != nil {
 		logrus.Error("GET /users/me | token validation error", err)
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, "Authorization header not provided")
@@ -110,16 +117,11 @@ func (u UsersController) GetMe(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user)
+	ctx.JSON(http.StatusOK, response.ToUserResp(user))
 }
 
-func (u UsersController) CreateUser(ctx *gin.Context) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (u UsersController) UpdateUser(ctx *gin.Context) {
-	var userDTO entities.User
+func (u Controller) CreateUser(ctx *gin.Context) {
+	var userDTO DTO.RegisterDTO
 	validate := validator.New()
 
 	if err := ctx.ShouldBindJSON(&userDTO); err != nil {
@@ -137,15 +139,46 @@ func (u UsersController) UpdateUser(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": errorMessage})
 	}
 
-	if err := u.userService.UpdateUser(&userDTO); err != nil {
+	id, err := u.userService.CreateUser(DTO.ToDomainRegisterDTO(userDTO))
+
+	if err != nil {
 		logrus.Error("PATCH /users/:id: | cannot update user: ", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, "Something went wrong")
 	}
 
-	ctx.JSON(http.StatusNoContent, userDTO)
+	ctx.JSON(http.StatusOK, gin.H{"id": id})
 }
 
-func (u UsersController) DeleteUser(ctx *gin.Context) {
+func (u Controller) UpdateUser(ctx *gin.Context) {
+	var userDTO DTO.UserDTO
+	validate := validator.New()
+
+	if err := ctx.ShouldBindJSON(&userDTO); err != nil {
+
+		logrus.Error("PATCH /users/:id: | body parsing error", err)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	if err := validate.Struct(&userDTO); err != nil {
+		errorMessage := pkg.ExtractValidationErrors(err)
+
+		logrus.Error("PATCH /users/:id: | body validation error", errorMessage)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": errorMessage})
+	}
+
+	id := ctx.Param("id")
+
+	if err := u.userService.UpdateUser(id, DTO.ToDomainUserDTO(userDTO)); err != nil {
+		logrus.Error("PATCH /users/:id: | cannot update user: ", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, "Something went wrong")
+	}
+
+	ctx.JSON(http.StatusNoContent, gin.H{})
+}
+
+func (u Controller) DeleteUser(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	if err := u.userService.DeleteUser(id); err != nil {
