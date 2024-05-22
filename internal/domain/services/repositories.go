@@ -11,7 +11,7 @@ type userRepository interface {
 	FindByUsername(username string) (*entities.User, error)
 	FindByEmail(email string) (*entities.User, error)
 	ComparePassword(password, passwordDto string) (bool, error)
-	FindAll(query string) ([]*entities.User, error)
+	FindAll(page, pageSize int, searchTerm string) ([]*entities.User, error)
 	Update(userId string, user *dto.UserDTO) error
 	Delete(id string) error
 }

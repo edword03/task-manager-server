@@ -1,24 +1,23 @@
 package users
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 	"strings"
 	"task-manager/internal/controllers/http/DTO"
 	"task-manager/internal/controllers/http/auth"
 	"task-manager/internal/controllers/http/response"
 	"task-manager/internal/domain/entities"
-	"task-manager/internal/domain/services"
 	"task-manager/internal/domain/services/dto"
 	"task-manager/internal/pkg"
 )
 
 type userService interface {
-	GetUsers(queries *services.Queries) ([]entities.User, error)
+	GetUsers(page, pageSize int, searchTerm string) ([]*entities.User, error)
 	GetUserById(id string) (*entities.User, error)
 	GetUserByEmail(email string) (*entities.User, error)
 	CreateUser(payload *dto.RegisterDTO) (*entities.User, error)
@@ -59,22 +58,58 @@ func NewUsersController(gin *gin.RouterGroup, userService userService, tokenServ
 }
 
 func (u Controller) GetUsers(ctx *gin.Context) {
-	search := ctx.Request.URL.Query().Get("search")
-	page := ctx.Request.URL.Query().Get("page")
+	searchTerm := ctx.Request.URL.Query().Get("search")
+	pageStr := ctx.Request.URL.Query().Get("page")
+	limitStr := ctx.Request.URL.Query().Get("limit")
 
-	users, err := u.userService.GetUsers(&services.Queries{
-		Page:   page,
-		Search: search,
-	})
-
+	page, err := strconv.Atoi(pageStr)
 	if err != nil {
-		logrus.Error("GET /users: | get users error: ", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		logrus.Error("GET /users: | strconv.Atoi error: ", err)
+		ctx.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	fmt.Println(users)
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		logrus.Error("GET /users: | strconv.Atoi error: ", err)
+		ctx.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
 
+	if page < 1 {
+		page = 1
+	}
+
+	if limit < 1 {
+		limit = 10
+	}
+
+	usersS, err := u.userService.GetUsers(page, limit, searchTerm)
+	offset := (page - 1) * limit
+
+	if err != nil {
+		logrus.Error("GET /users: | get users error: ", err)
+		ctx.AbortWithStatusJSON(http.StatusOK, gin.H{
+			"users":   []response.UserResp{},
+			"_page":   page,
+			"_limit":  limit,
+			"_offset": offset,
+		})
+		return
+	}
+
+	var users []*response.UserResp
+
+	for _, user := range usersS {
+		users = append(users, response.ToUserResp(user))
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"users":   users,
+		"_page":   page,
+		"_limit":  limit,
+		"_offset": offset,
+	})
 }
 
 func (u Controller) GetUserById(ctx *gin.Context) {
@@ -173,6 +208,7 @@ func (u Controller) UpdateUser(ctx *gin.Context) {
 	if err := u.userService.UpdateUser(id, DTO.ToDomainUserDTO(userDTO)); err != nil {
 		logrus.Error("PATCH /users/:id: | cannot update user: ", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, "Something went wrong")
+		return
 	}
 
 	ctx.JSON(http.StatusNoContent, gin.H{})

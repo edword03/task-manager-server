@@ -6,11 +6,6 @@ import (
 	"task-manager/internal/domain/services/dto"
 )
 
-type Queries struct {
-	Page   string
-	Search string
-}
-
 type UserService struct {
 	userRepo userRepository
 }
@@ -21,9 +16,18 @@ func NewUserService(repository userRepository) *UserService {
 	}
 }
 
-func (u UserService) GetUsers(queries *Queries) ([]entities.User, error) {
-	//TODO implement me
-	panic("implement me")
+func (u UserService) GetUsers(page, pageSize int, searchTerm string) ([]*entities.User, error) {
+	users, err := u.userRepo.FindAll(page, pageSize, searchTerm)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(users) == 0 {
+		return nil, errors.New("users not found")
+	}
+
+	return users, nil
 }
 
 func (u UserService) GetUserById(id string) (*entities.User, error) {
@@ -94,7 +98,17 @@ func (u UserService) CreateUser(payload *dto.RegisterDTO) (*entities.User, error
 }
 
 func (u UserService) UpdateUser(userId string, user *dto.UserDTO) error {
-	err := u.userRepo.Update(userId, user)
+	currentUser, err := u.userRepo.FindById(userId)
+
+	if err != nil {
+		return err
+	}
+
+	if currentUser == nil {
+		return errors.New("user not found")
+	}
+
+	err = u.userRepo.Update(userId, user)
 
 	if err != nil {
 		return err

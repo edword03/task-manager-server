@@ -69,9 +69,16 @@ func (u UserRepository) FindByEmail(email string) (*entities.User, error) {
 	return ToDomainUser(user), nil
 }
 
-func (u UserRepository) FindAll(query string) ([]*entities.User, error) {
+func (u UserRepository) FindAll(page, pageSize int, searchTerm string) ([]*entities.User, error) {
+	offset := (page - 1) * pageSize
 	var users []*User
-	err := u.db.Where("first_name = ", query).Find(&users).Error
+
+	query := u.db.Offset(offset).Limit(pageSize)
+	if searchTerm != "" {
+		query = query.Where("first_name LIKE ?", "%"+searchTerm+"%")
+	}
+
+	err := query.Find(&users).Error
 
 	if err != nil {
 		return nil, err
