@@ -15,6 +15,6 @@ type Task struct {
 	UpdateTime time.Time
 	DueTime
 	Priority  int
-	Tags      []string
-	Assignees []string
+	Tags      []Tag
+	Assignees User
 }
