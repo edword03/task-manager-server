@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"task-manager/internal/config"
+	"task-manager/internal/database/postgres/tag"
 	"task-manager/internal/database/postgres/user"
 )
 
@@ -27,7 +28,7 @@ func connectDB(cfg *config.DBConfig) *gorm.DB {
 		log.Fatal("Connection error", err)
 	}
 
-	err = db.AutoMigrate(&user.User{})
+	err = db.AutoMigrate(&user.User{}, &tag.Tag{})
 	if err != nil {
 		log.Fatal("Migration error", err)
 	}

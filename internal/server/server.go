@@ -7,8 +7,10 @@ import (
 	"task-manager/internal/config"
 	"task-manager/internal/controllers/http/auth"
 	"task-manager/internal/controllers/http/jwt"
+	"task-manager/internal/controllers/http/tags"
 	"task-manager/internal/controllers/http/users"
 	"task-manager/internal/database/postgres"
+	"task-manager/internal/database/postgres/tag"
 	userRepo "task-manager/internal/database/postgres/user"
 	"task-manager/internal/database/redis"
 	redisRepository "task-manager/internal/database/redis/repositories"
@@ -34,6 +36,10 @@ func New(cfg *config.AppConfig) {
 
 	tokenRepo := redisRepository.NewRedisRepo(redis.TokensClient)
 	tokenService := jwt.NewJWTService(cfg, tokenRepo, auth.MaxAgeCookie*time.Duration(cfg.RefreshMaxAge))
+
+	tagRepository := tag.NewTagRepo(postgres.Db)
+	tagService := services.NewTagService(tagRepository)
+	tags.NewTagsController(r, tagService, tokenService)
 
 	auth.NewAuthController(r, authService, tokenService, cfg)
 	users.NewUsersController(r, userService, tokenService)

@@ -1,7 +1,6 @@
-package entities
+package dto
 
 type Tag struct {
-	ID    string
 	Name  string
 	Color string
 }
