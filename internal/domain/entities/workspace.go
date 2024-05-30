@@ -6,7 +6,7 @@ type Settings struct {
 }
 
 type Workspace struct {
-	ID          [16]byte
+	ID          string
 	Name        string
 	Type        string
 	Description string

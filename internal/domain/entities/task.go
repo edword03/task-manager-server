@@ -8,13 +8,16 @@ type DueTime struct {
 }
 
 type Task struct {
-	ID         [16]byte
-	Title      string
-	Content    string
-	CreateTime time.Time
-	UpdateTime time.Time
+	ID          string
+	TaskID      string
+	WorkspaceId string
+	Title       string
+	Content     string
+	CreateTime  time.Time
+	UpdateTime  time.Time
 	DueTime
-	Priority  int
-	Tags      []Tag
-	Assignees User
+	Priority int
+	Tags     []Tag
+	Author   User
+	Assignee User
 }
