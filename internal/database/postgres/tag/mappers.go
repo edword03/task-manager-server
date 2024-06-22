@@ -1,8 +1,11 @@
 package tag
 
-import "task-manager/internal/domain/entities"
+import (
+	"task-manager/internal/database/postgres/models"
+	"task-manager/internal/domain/entities"
+)
 
-func ToDomainTag(tag *Tag) *entities.Tag {
+func ToDomainTag(tag *models.Tag) *entities.Tag {
 	return &entities.Tag{
 		ID:    tag.ID,
 		Name:  tag.Name,
@@ -10,15 +13,15 @@ func ToDomainTag(tag *Tag) *entities.Tag {
 	}
 }
 
-func ToDBTag(tag *entities.Tag) *Tag {
-	return &Tag{
+func ToDBTag(tag *entities.Tag) *models.Tag {
+	return &models.Tag{
 		ID:    tag.ID,
 		Name:  tag.Name,
 		Color: tag.Color,
 	}
 }
 
-func ToDomainTags(tags []*Tag) []*entities.Tag {
+func ToDomainTags(tags []*models.Tag) []*entities.Tag {
 	var result []*entities.Tag
 
 	for _, tag := range tags {

@@ -3,8 +3,8 @@ package entities
 import "time"
 
 type DueTime struct {
-	From time.Time
-	To   time.Time
+	From *time.Time
+	To   *time.Time
 }
 
 type Task struct {

@@ -11,6 +11,7 @@ type Workspace struct {
 	Type        string
 	Description string
 	Logo        string
+	Owner       User
 	Members     []User
 	CreatedAt   time.Time
 	UpdatedAt   time.Time

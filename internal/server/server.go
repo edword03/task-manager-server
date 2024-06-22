@@ -9,9 +9,11 @@ import (
 	"task-manager/internal/controllers/http/jwt"
 	"task-manager/internal/controllers/http/tags"
 	"task-manager/internal/controllers/http/users"
+	"task-manager/internal/controllers/http/workspaces"
 	"task-manager/internal/database/postgres"
 	"task-manager/internal/database/postgres/tag"
 	userRepo "task-manager/internal/database/postgres/user"
+	"task-manager/internal/database/postgres/workspace"
 	"task-manager/internal/database/redis"
 	redisRepository "task-manager/internal/database/redis/repositories"
 	"task-manager/internal/domain/services"
@@ -40,6 +42,10 @@ func New(cfg *config.AppConfig) {
 	tagRepository := tag.NewTagRepo(postgres.Db)
 	tagService := services.NewTagService(tagRepository)
 	tags.NewTagsController(r, tagService, tokenService)
+
+	workspaceRepository := workspace.NewWorkspaceRepo(postgres.Db)
+	workspaceService := services.NewWorkspaceService(workspaceRepository)
+	workspaces.NewWorkspaceController(r, workspaceService, userService)
 
 	auth.NewAuthController(r, authService, tokenService, cfg)
 	users.NewUsersController(r, userService, tokenService)

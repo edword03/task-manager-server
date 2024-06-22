@@ -1,13 +1,14 @@
 package task
 
 import (
+	"task-manager/internal/database/postgres/models"
 	"task-manager/internal/domain/entities"
 )
 
-func ToDBTask(task *entities.Task) *Task {
-	return &Task{
+func ToDBTask(task *entities.Task) *models.Task {
+	return &models.Task{
 		TaskID:      task.TaskID,
-		WorkspaceId: task.WorkspaceId,
+		WorkspaceID: task.WorkspaceId,
 		Title:       task.Title,
 		Content:     task.Content,
 		FromTime:    task.DueTime.From,
@@ -16,11 +17,11 @@ func ToDBTask(task *entities.Task) *Task {
 	}
 }
 
-func ToDomainTask(task *Task) *entities.Task {
+func ToDomainTask(task *models.Task) *entities.Task {
 	return &entities.Task{
 		ID:          task.ID,
 		TaskID:      task.TaskID,
-		WorkspaceId: task.WorkspaceId,
+		WorkspaceId: task.WorkspaceID,
 		Title:       task.Title,
 		Content:     task.Content,
 		CreateTime:  task.CreatedAt,
@@ -33,7 +34,7 @@ func ToDomainTask(task *Task) *entities.Task {
 	}
 }
 
-func ToDomainTasks(tasks []*Task) []*entities.Task {
+func ToDomainTasks(tasks []*models.Task) []*entities.Task {
 	var results []*entities.Task
 
 	for _, task := range tasks {

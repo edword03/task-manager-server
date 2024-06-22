@@ -3,7 +3,6 @@ package services
 import (
 	"task-manager/internal/domain/entities"
 	"task-manager/internal/domain/services/dto"
-	"time"
 )
 
 type taskRepository interface {
@@ -56,8 +55,8 @@ func (t TaskService) Create(workspaceId, taskId string, task *dto.TaskDTO) (*ent
 		Priority = 3
 		Assignee = entities.User{}
 		DueTime  = entities.DueTime{
-			From: time.Time{},
-			To:   time.Time{},
+			From: nil,
+			To:   nil,
 		}
 	)
 

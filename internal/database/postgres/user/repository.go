@@ -5,6 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"task-manager/internal/database/postgres/models"
 	"task-manager/internal/domain/entities"
 	"task-manager/internal/domain/services/dto"
 )
@@ -19,7 +20,7 @@ func NewUserRepo(db *gorm.DB) UserRepository {
 
 func (u UserRepository) Create(user *entities.User) (*entities.User, error) {
 	dbUser := ToDBUser(user)
-	if err := u.db.Model(&User{}).Create(dbUser).Error; err != nil {
+	if err := u.db.Model(&models.User{}).Create(dbUser).Error; err != nil {
 		return nil, err
 	}
 
@@ -27,8 +28,8 @@ func (u UserRepository) Create(user *entities.User) (*entities.User, error) {
 }
 
 func (u UserRepository) FindById(id string) (*entities.User, error) {
-	var user *User
-	err := u.db.Model(&User{}).Where("id = ?", id).Find(&user).Error
+	var user *models.User
+	err := u.db.Model(&models.User{}).Where("id = ?", id).Find(&user).Error
 
 	if err != nil {
 		return nil, err
@@ -46,8 +47,8 @@ func (u UserRepository) ComparePassword(hashedPassword, password string) (bool, 
 }
 
 func (u UserRepository) FindByUsername(username string) (*entities.User, error) {
-	var user *User
-	result := u.db.Model(User{}).Where("name = ?", username).Find(&user)
+	var user *models.User
+	result := u.db.Model(models.User{}).Where("name = ?", username).Find(&user)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -57,9 +58,9 @@ func (u UserRepository) FindByUsername(username string) (*entities.User, error) 
 }
 
 func (u UserRepository) FindByEmail(email string) (*entities.User, error) {
-	var user *User
+	var user *models.User
 
-	err := u.db.Model(&User{}).Where("email = ?", email).Find(&user).Error
+	err := u.db.Model(&models.User{}).Where("email = ?", email).Find(&user).Error
 
 	if err != nil {
 		logrus.Error("user repo: ", err)
@@ -71,7 +72,7 @@ func (u UserRepository) FindByEmail(email string) (*entities.User, error) {
 
 func (u UserRepository) FindAll(page, pageSize int, searchTerm string) ([]*entities.User, error) {
 	offset := (page - 1) * pageSize
-	var users []*User
+	var users []*models.User
 
 	query := u.db.Offset(offset).Limit(pageSize)
 	if searchTerm != "" {
@@ -88,7 +89,7 @@ func (u UserRepository) FindAll(page, pageSize int, searchTerm string) ([]*entit
 }
 
 func (u UserRepository) Update(userId string, user *dto.UserDTO) error {
-	result := u.db.Model(&User{}).Where("id = ?", userId).Updates(user)
+	result := u.db.Model(&models.User{}).Where("id = ?", userId).Updates(user)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -99,7 +100,7 @@ func (u UserRepository) Update(userId string, user *dto.UserDTO) error {
 }
 
 func (u UserRepository) Delete(id string) error {
-	result := u.db.Model(&User{}).Delete(&User{}, id)
+	result := u.db.Model(&models.User{}).Delete(&models.User{}, id)
 
 	if result.Error != nil {
 		return result.Error

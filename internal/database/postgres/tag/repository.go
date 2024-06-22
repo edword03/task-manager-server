@@ -2,6 +2,7 @@ package tag
 
 import (
 	"gorm.io/gorm"
+	"task-manager/internal/database/postgres/models"
 	"task-manager/internal/domain/entities"
 	"task-manager/internal/domain/services/dto"
 )
@@ -17,7 +18,7 @@ func NewTagRepo(db *gorm.DB) *TagRepository {
 }
 
 func (t TagRepository) GetById(id string) (*entities.Tag, error) {
-	var tag *Tag
+	var tag *models.Tag
 
 	err := t.db.Model(&tag).Where("id = ?", id).Find(&tag).Error
 
@@ -29,9 +30,9 @@ func (t TagRepository) GetById(id string) (*entities.Tag, error) {
 }
 
 func (t TagRepository) GetByName(name string) (*entities.Tag, error) {
-	var tag *Tag
+	var tag *models.Tag
 
-	result := t.db.Model(&Tag{}).Where("name = ?", name).Find(&tag)
+	result := t.db.Model(&models.Tag{}).Where("name = ?", name).Find(&tag)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -41,9 +42,9 @@ func (t TagRepository) GetByName(name string) (*entities.Tag, error) {
 }
 
 func (t TagRepository) GetAll(searchTerm string) ([]*entities.Tag, error) {
-	var tags []*Tag
+	var tags []*models.Tag
 
-	query := t.db.Model(&Tag{})
+	query := t.db.Model(&models.Tag{})
 
 	if searchTerm != "" {
 		query = query.Where("name LIKE ?", "%"+searchTerm+"%")
@@ -61,7 +62,7 @@ func (t TagRepository) GetAll(searchTerm string) ([]*entities.Tag, error) {
 func (t TagRepository) Create(tag *entities.Tag) (*entities.Tag, error) {
 	newTag := ToDBTag(tag)
 
-	if err := t.db.Model(&Tag{}).Create(newTag).Error; err != nil {
+	if err := t.db.Model(&models.Tag{}).Create(newTag).Error; err != nil {
 		return nil, err
 	}
 
@@ -69,7 +70,7 @@ func (t TagRepository) Create(tag *entities.Tag) (*entities.Tag, error) {
 }
 
 func (t TagRepository) Update(id string, tag *dto.Tag) error {
-	result := t.db.Model(&Tag{}).Where("id = ?", id).Updates(tag)
+	result := t.db.Model(&models.Tag{}).Where("id = ?", id).Updates(tag)
 
 	if result.Error != nil {
 		return result.Error
@@ -79,7 +80,7 @@ func (t TagRepository) Update(id string, tag *dto.Tag) error {
 }
 
 func (t TagRepository) Delete(id string) error {
-	result := t.db.Model(&Tag{}).Where("id = ?", id).Delete(&Tag{})
+	result := t.db.Model(&models.Tag{}).Where("id = ?", id).Delete(&models.Tag{})
 
 	if result.Error != nil {
 		return result.Error

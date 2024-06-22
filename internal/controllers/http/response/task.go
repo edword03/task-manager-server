@@ -11,8 +11,8 @@ type TaskResponse struct {
 	WorkspaceId string         `json:"workspace_id"`
 	Title       string         `json:"title"`
 	Content     string         `json:"content"`
-	FromTime    time.Time      `json:"from_time"`
-	ToTime      time.Time      `json:"to_time"`
+	FromTime    *time.Time     `json:"from_time"`
+	ToTime      *time.Time     `json:"to_time"`
 	Priority    int            `json:"priority"`
 	Author      entities.User  `json:"author"`
 	Assignee    entities.User  `json:"assignee"`

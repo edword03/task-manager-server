@@ -1,11 +1,12 @@
 package user
 
 import (
+	"task-manager/internal/database/postgres/models"
 	"task-manager/internal/domain/entities"
 )
 
-func ToDBUser(user *entities.User) *User {
-	return &User{
+func ToDBUser(user *entities.User) *models.User {
+	return &models.User{
 		Email:     user.Email,
 		Username:  user.Username,
 		FirstName: user.FirstName,
@@ -17,7 +18,7 @@ func ToDBUser(user *entities.User) *User {
 
 }
 
-func ToDomainUser(user *User) *entities.User {
+func ToDomainUser(user *models.User) *entities.User {
 	return &entities.User{
 		ID:        user.ID,
 		Email:     user.Email,
@@ -30,7 +31,7 @@ func ToDomainUser(user *User) *entities.User {
 	}
 }
 
-func ToDomainUsers(users []*User) []*entities.User {
+func ToDomainUsers(users []*models.User) []*entities.User {
 	var result []*entities.User
 	for _, user := range users {
 		result = append(result, ToDomainUser(user))
